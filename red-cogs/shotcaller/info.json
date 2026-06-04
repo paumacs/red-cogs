@@ -1,0 +1,12 @@
+{
+    "name": "Jungle Shotcaller",
+    "short": "Send repeated Jungle shotcall messages to a role.",
+    "description": "Send repeated `Jungle in 30s` notifications to a role every 4.5 minutes for 30 minutes.",
+    "end_user_data_statement": "This cog does not store any End User Data.",
+    "install_msg": "Thanks for installing Jungle Shotcaller. Load the cog with `[p]load Jungle Shotcaller` and see its commands with `[p]help Jungle Shotcaller`.",
+    "author": [
+        "Cheodl"
+    ],
+    "requirements": [],
+    "type": "COG"
+}
