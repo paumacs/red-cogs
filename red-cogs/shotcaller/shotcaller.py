@@ -1,9 +1,11 @@
 import asyncio
 import logging
 import time
+from pathlib import Path
 from typing import Optional
 
 import discord
+from discord import FFmpegPCMAudio, PCMVolumeTransformer
 from redbot.core import Config, commands
 from redbot.core.bot import Red
 from redbot.core.utils import chat_formatting as cf
@@ -20,11 +22,29 @@ class JungleShotcaller(commands.Cog):
     SPAWN_OFFSETS = [0, 5, 10, 15, 20, 25]
     DEFAULT_BUFFER_SECONDS = 30
 
+    SHOTCALL_SOUND = Path(__file__).parent / "sound" / "shotcall.mp3"
+
     def __init__(self, bot: Red):
         self.bot = bot
         self.active_shotcall: Optional[asyncio.Task] = None
         self.config = Config.get_conf(self, 2074396482, force_registration=True)
         self.config.register_guild(buffer_seconds=self.DEFAULT_BUFFER_SECONDS)
+
+    def _get_shotcall_audio_source(self) -> Optional[PCMVolumeTransformer]:
+        if not self.SHOTCALL_SOUND.exists():
+            return None
+        return PCMVolumeTransformer(
+            FFmpegPCMAudio(str(self.SHOTCALL_SOUND), options="-vn")
+        )
+
+    def _play_shotcall_sound(self, voice_client: discord.VoiceClient) -> None:
+        if not voice_client or not voice_client.is_connected():
+            return
+        if voice_client.is_playing():
+            voice_client.stop()
+        source = self._get_shotcall_audio_source()
+        if source:
+            voice_client.play(source)
 
     async def red_delete_data_for_user(self, *, requester, user_id: int):
         if self.active_shotcall and not self.active_shotcall.done():
@@ -110,6 +130,10 @@ class JungleShotcaller(commands.Cog):
                 sleep_seconds = notification_seconds - (time.monotonic() - start_time)
                 if sleep_seconds > 0:
                     await asyncio.sleep(sleep_seconds)
+
+                voice_client = channel.guild.voice_client
+                if voice_client and voice_client.is_connected():
+                    self._play_shotcall_sound(voice_client)
 
                 if index == 0:
                     await channel.send(f"{role.mention} Jungle shotcall started!")
